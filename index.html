@@ -74,6 +74,7 @@
   </div>
   <button id="btnSimpan" class="btn" onclick="simpanTerima()">Simpan Konfirmasi</button>
   <button id="btnBaru" class="btn" style="background:#fff;color:var(--mute);border:1px solid var(--line);display:none" onclick="kosongkan()">Terima Kitir Lain</button>
+  <button class="btn" style="background:#25D366" onclick="terimaShareWa()">Share WA</button>
 </div>
 
 <div id="scanModal"><div id="scanBox">
@@ -223,6 +224,17 @@ function tutupScan(){
     html5QrCode.stop().then(function(){ html5QrCode.clear(); }).catch(function(){});
     html5QrCode=null;
   }
+}
+  function terimaShareWa(){
+  var it=itemsAktif;
+  if(!it.length){ setMsg('Belum ada data kitir.','bad'); return; }
+  var teks='📦 TERIMA BARANG\n'+
+    'No. Kitir: '+kitirAktif+'\n'+
+    'Tujuan: '+(it[0].tujuan||'-')+'\n';
+  it.forEach(function(x){
+    teks+='- '+x.palet+' | '+x.produk+' | Muat '+x.qty+' | Terima '+(x.terima===''?'-':x.terima)+' | '+x.status+'\n';
+  });
+  window.open('https://wa.me/?text='+encodeURIComponent(teks),'_blank');
 }
 </script>
 </body>
