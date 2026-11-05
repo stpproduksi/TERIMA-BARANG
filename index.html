@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TERIMA BARANG</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F3F4F6;--card:#FFF;--ink:#14181F;--mute:#5B6472;--line:#E3E6EA;--accent:#1D4E89;--good:#157F3C;--bad:#B91C1C;}
+  *{box-sizing:border-box;}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:18px;margin:0;}
+  h1{font-size:16px;font-weight:800;margin:0 0 2px;} .sub{font-size:11px;color:var(--mute);margin-bottom:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:420px;margin:0 auto 14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:5px;}
+  .field input{width:100%;padding:11px 12px;font-size:15px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+  .field input:disabled{background:#F3F4F6;color:var(--mute);}
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(29,78,137,.15);}
+  .manualRow{display:flex;gap:6px;margin-bottom:6px;}
+  .manualRow input{flex:1;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:8px;}
+  .btn{width:100%;padding:13px;font-size:14px;font-weight:700;border:none;border-radius:8px;color:#fff;cursor:pointer;margin-top:8px;background:var(--accent);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  #btnScan{background:#111827;margin-bottom:8px;}
+  #btnCari{width:auto;padding:10px 14px;margin-top:0;font-size:13px;}
+  #btnStop{background:#fff;color:var(--mute);border:1px solid var(--line);}
+  #scanInfo{font-size:12px;color:var(--mute);margin:6px 0 10px;min-height:16px;}
+  #infoBox{display:none;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:11px 12px;margin-bottom:14px;font-size:12.5px;}
+  #infoBox .r{display:flex;justify-content:space-between;padding:3px 0;gap:8px;}
+  #infoBox .r span:last-child{font-weight:700;font-family:'Roboto Mono',monospace;text-align:right;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;}
+  td input{width:90px;padding:7px;font-size:14px;border:1px solid var(--line);border-radius:6px;text-align:right;}
+  td input:disabled{background:#F3F4F6;color:var(--mute);}
+  .plus{color:var(--good);font-weight:700;} .minus{color:var(--bad);font-weight:700;}
+  #catatanBox{font-size:12.5px;color:#8a5a00;margin-top:8px;}
+  #msg{font-size:12.5px;margin-top:10px;min-height:16px;}
+  #msg.ok{color:var(--good);font-weight:700;} #msg.bad{color:var(--bad);font-weight:700;}
+  #area{display:none;}
+  #scanModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;padding:16px;}
+  #scanBox{background:#fff;border-radius:12px;padding:12px;max-width:420px;margin:10% auto 0;}
+</style>
+</head>
+<body>
+<h1>TERIMA BARANG</h1>
+<div class="sub">Scan barcode No. Kitir, isi qty yang diterima per palet, lalu simpan konfirmasi.</div>
+
+<div class="card">
+  <button id="btnScan" class="btn" onclick="bukaScan()">📷 Scan Barcode Kitir</button>
+  <div class="manualRow">
+    <input type="text" id="fKitir" placeholder="atau ketik No. Kitir" autocapitalize="characters">
+    <button id="btnCari" class="btn" onclick="cariKitirManual()">CARI</button>
+  </div>
+  <div id="scanInfo"></div>
+  <div id="msg"></div>
+</div>
+
+<div id="area" class="card">
+  <div id="infoBox">
+    <div class="r"><span>No. Kitir</span><span id="iKitir">-</span></div>
+    <div class="r"><span>Tujuan</span><span id="iTujuan">-</span></div>
+    <div class="r"><span>Jumlah Palet</span><span id="iJml">-</span></div>
+  </div>
+
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tabel"></tbody>
+  </table>
+  <div id="catatanBox"></div>
+
+  <div class="field" style="margin-top:14px">
+    <label>Nama Penerima</label>
+    <input type="text" id="fNama" placeholder="Nama penerima">
+  </div>
+  <button id="btnSimpan" class="btn" onclick="simpanTerima()">Simpan Konfirmasi</button>
+  <button id="btnBaru" class="btn" style="background:#fff;color:var(--mute);border:1px solid var(--line);display:none" onclick="kosongkan()">Terima Kitir Lain</button>
+</div>
+
+<div id="scanModal"><div id="scanBox">
+  <div style="font-weight:800;text-align:center;margin-bottom:8px;">Scan Barcode Kitir</div>
+  <div id="reader"></div>
+  <button id="btnStop" class="btn" onclick="tutupScan()">Tutup Kamera</button>
+</div></div>
+
+<script>
+var WEBAPP_URL='https://script.google.com/macros/s/AKfycbxp5L0rGdC0ki2M18YjNnylr0aAOXDLCzW5k84fJhT7aCkdlFrPeOY2tH0b75MMjDJh/exec';
+
+var kitirAktif=null;  // No. Kitir yang sedang dibuka
+var itemsAktif=[];    // baris muat per palet (row = nomor baris di sheet)
+var html5QrCode=null;
+
+function setMsg(t,c){ var m=document.getElementById('msg'); m.textContent=t; m.className=c||''; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tanggalHariIni(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function jamSekarang(){ var n=new Date(); return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
+
+// Ambil data kitir dari server (hanya membaca)
+function cariKitir(kode){
+  kode=String(kode||'').trim().toUpperCase();
+  if(!kode){ setMsg('No. Kitir kosong','bad'); return; }
+  setMsg('Mencari '+kode+'...','');
+  document.getElementById('scanInfo').textContent='No. Kitir: '+kode;
+  fetch(WEBAPP_URL+'?action=kitirCari&kitir='+encodeURIComponent(kode))
+    .then(r=>r.json())
+    .then(res=>{
+      if(res&&res.ok){ tampilKitir(res); }
+      else {
+        document.getElementById('area').style.display='none';
+        setMsg((res&&res.error)||'Kitir tidak ditemukan','bad');
+      }
+    })
+    .catch(e=>{ setMsg('Gagal terhubung: '+e.message,'bad'); });
+}
+
+function cariKitirManual(){ cariKitir(document.getElementById('fKitir').value); }
+
+function tampilKitir(res){
+  kitirAktif=res.kitir;
+  itemsAktif=res.items;
+  document.getElementById('fKitir').value=res.kitir;
+  document.getElementById('area').style.display='block';
+  document.getElementById('iKitir').textContent=res.kitir;
+  document.getElementById('iTujuan').textContent=res.items[0]?res.items[0].tujuan:'-';
+  document.getElementById('iJml').textContent=res.items.length;
+
+  var sudah=res.sudahTerima;
+  var tbody='', thead;
+  if(sudah){
+    thead='<tr><th>Palet</th><th>Produk</th><th>Muat</th><th>Diterima</th><th>Status</th></tr>';
+    res.items.forEach(function(it){
+      var cls=it.status==='Diterima'?'plus':'minus';
+      tbody+='<tr><td>'+esc(it.palet)+'</td><td>'+esc(it.produk)+'</td><td>'+esc(it.qty)+'</td><td>'+esc(it.terima)+'</td><td class="'+cls+'">'+esc(it.status)+'</td></tr>';
+    });
+    var catatan=res.items.filter(function(it){return it.catatan;}).map(function(it){return esc(it.catatan);}).join('<br>');
+    document.getElementById('catatanBox').innerHTML=catatan;
+    document.getElementById('fNama').disabled=true;
+    document.getElementById('btnSimpan').style.display='none';
+    document.getElementById('btnBaru').style.display='block';
+    setMsg('Kitir ini sudah dikonfirmasi terima.','ok');
+  } else {
+    thead='<tr><th>Palet</th><th>Produk</th><th>Muat</th><th>Diterima</th><th>Selisih</th></tr>';
+    res.items.forEach(function(it){
+      tbody+='<tr><td>'+esc(it.palet)+'</td><td>'+esc(it.produk)+'</td><td>'+esc(it.qty)+'</td>'+
+        '<td><input type="number" step="any" min="0" id="in_'+it.row+'" oninput="hitungSelisih('+it.row+','+Number(it.qty)+')"></td>'+
+        '<td id="sel_'+it.row+'">-</td></tr>';
+    });
+    document.getElementById('catatanBox').innerHTML='';
+    document.getElementById('fNama').disabled=false;
+    document.getElementById('fNama').value='';
+    document.getElementById('btnSimpan').style.display='block';
+    document.getElementById('btnBaru').style.display='none';
+    setMsg('Isi qty diterima per palet, lalu simpan.','ok');
+  }
+  document.getElementById('thead').innerHTML=thead;
+  document.getElementById('tabel').innerHTML=tbody;
+}
+
+function hitungSelisih(row,muat){
+  var v=parseFloat(document.getElementById('in_'+row).value);
+  var cell=document.getElementById('sel_'+row);
+  if(isNaN(v)){ cell.textContent='-'; cell.className=''; return; }
+  var s=v-muat;
+  cell.textContent=(s>0?'+':'')+s;
+  cell.className=s===0?'':(s>0?'plus':'minus');
+}
+
+function simpanTerima(){
+  var nama=document.getElementById('fNama').value.trim();
+  if(!nama){ setMsg('Nama penerima belum diisi','bad'); return; }
+  var items=itemsAktif.map(function(it){ return {row:it.row, terima:document.getElementById('in_'+it.row).value}; });
+  if(items.some(function(x){ return x.terima===''; })){ setMsg('Isi qty diterima untuk semua palet','bad'); return; }
+
+  var payload={_app:'kitirterima', kitir:kitirAktif, tanggal:tanggalHariIni(), jam:jamSekarang(), nama:nama, items:items};
+  var btn=document.getElementById('btnSimpan');
+  btn.disabled=true; setMsg('Menyimpan...','');
+
+  fetch(WEBAPP_URL+'?action=save&payload='+encodeURIComponent(JSON.stringify(payload)))
+    .then(r=>r.text())
+    .then(t=>{
+      var res;
+      try{ res=JSON.parse(t); }catch(e){ res={ok:false,error:'Respon server: '+t.slice(0,200)}; }
+      if(res&&res.ok){
+        cariKitir(kitirAktif);
+        setMsg('✅ Konfirmasi terima tersimpan.','ok');
+      } else {
+        btn.disabled=false;
+        setMsg('❌ Gagal: '+(res.error||'tidak diketahui'),'bad');
+      }
+    })
+    .catch(e=>{ btn.disabled=false; setMsg('❌ Gagal: '+e.message,'bad'); });
+}
+
+function kosongkan(){
+  kitirAktif=null; itemsAktif=[];
+  document.getElementById('fKitir').value='';
+  document.getElementById('scanInfo').textContent='';
+  document.getElementById('area').style.display='none';
+  document.getElementById('btnSimpan').disabled=false;
+  setMsg('Siap untuk kitir berikutnya.','ok');
+}
+
+// Scan barcode kitir
+function bukaScan(){
+  document.getElementById('scanModal').style.display='block';
+  html5QrCode=new Html5Qrcode('reader');
+  html5QrCode.start(
+    {facingMode:'environment'},
+    {fps:10, qrbox:{width:280,height:120}},
+    function(decoded){
+      tutupScan();
+      document.getElementById('fKitir').value=String(decoded).trim();
+      cariKitir(decoded);
+    },
+    function(){}
+  ).catch(function(e){
+    document.getElementById('scanModal').style.display='none';
+    setMsg('Kamera gagal dibuka: '+e,'bad');
+  });
+}
+function tutupScan(){
+  document.getElementById('scanModal').style.display='none';
+  if(html5QrCode){
+    html5QrCode.stop().then(function(){ html5QrCode.clear(); }).catch(function(){});
+    html5QrCode=null;
+  }
+}
+</script>
+</body>
+</html>
