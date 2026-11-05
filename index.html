@@ -232,7 +232,9 @@ function tutupScan(){
     'No. Kitir: '+kitirAktif+'\n'+
     'Tujuan: '+(it[0].tujuan||'-')+'\n';
   it.forEach(function(x){
-    teks+='- '+x.palet+' | '+x.produk+' | Muat '+x.qty+' | Terima '+(x.terima===''?'-':x.terima)+' | '+x.status+'\n';
+    var sel=Number(x.selisih)||0;
+    var selTxt=(sel>0?'+':'')+sel;
+    teks+='- '+x.palet+' | '+x.produk+' | Muat '+x.muatAwal+' | Terima '+x.qty+' | Selisih '+selTxt+' | '+x.status+'\n';
   });
   window.open('https://wa.me/?text='+encodeURIComponent(teks),'_blank');
 }
